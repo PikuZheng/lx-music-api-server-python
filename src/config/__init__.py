@@ -12,13 +12,13 @@ import ujson as json
 import time
 import os
 import traceback
-import sys
 import sqlite3
-from . import variable
-from .log import log
+import yaml
 import threading
+from common import variable
+from .log import logger
+from . import default
 
-logger = log("config_manager")
 
 # 创建线程本地存储对象
 local_data = threading.local()
@@ -46,161 +46,25 @@ class ConfigReadException(Exception):
     pass
 
 
-default = {
-    "common": {
-        "host": "0.0.0.0",
-        "_host-desc": "服务器启动时所使用的HOST地址",
-        "port": "9763",
-        "_port-desc": "服务器启动时所使用的端口",
-        "debug_mode": False,
-        "_debug_mode-desc": "是否开启调试模式",
-        "log_length_limit": 500,
-        "_log_length_limit-desc": "单条日志长度限制",
-        "fakeip": "1.0.1.114",
-        "_fakeip-desc": "服务器在海外时的IP伪装值",
-        "proxy": {
-            "enable": False,
-            "http_addr": "http://127.0.0.1:7890",
-            "https_addr": "https://127.0.0.1:7890",
-        },
-        "_proxy-desc": "代理配置，HTTP与HTTPS协议需分开配置",
-    },
-    "security": {
-        "rate_limit": {
-            "global": 0,
-            "ip": 0,
-            "desc": "请求速率限制，global为全局，ip为单个ip，填入的值为至少间隔多久才能进行一次请求，单位：秒，不限制请填为0",
-        },
-        "key": {
-            "enable": False,
-            "_enable-desc": "是否开启请求key，开启后只有请求头中包含key，且值一样时可以访问API",
-            "ban": True,
-            "value": "114514",
-        },
-        "whitelist_host": [
-            "localhost",
-            "0.0.0.0",
-            "127.0.0.1",
-        ],
-        "_whitelist_host-desc": "强制白名单HOST，不需要加端口号（即不受其他安全设置影响的HOST）",
-        "check_lxm": False,
-        "_check_lxm-desc": "是否检查lxm请求头（正常的LX Music请求时都会携带这个请求头）",
-        "lxm_ban": True,
-        "_lxm_ban-desc": "lxm请求头不存在或不匹配时是否将用户IP加入黑名单",
-        "allowed_host": {
-            "desc": "HOST允许列表，启用后只允许列表内的HOST访问服务器，不需要加端口号",
-            "enable": False,
-            "blacklist": {
-                "desc": "当用户访问的HOST并不在允许列表中时是否将请求IP加入黑名单，长度单位：秒",
-                "enable": False,
-                "length": 0,
-            },
-            "list": [
-                "localhost",
-                "0.0.0.0",
-                "127.0.0.1",
-            ],
-        },
-        "banlist": {
-            "desc": "是否启用黑名单（全局设置，关闭后已存储的值并不受影响，但不会再检查）",
-            "enable": True,
-            "expire": {
-                "desc": "是否启用黑名单IP过期（关闭后其他地方的配置会失效）",
-                "enable": True,
-                "length": 86400 * 7,  # 七天
-            },
-        },
-    },
-    "module": {
-        "kg": {
-            "desc": "酷狗音乐相关配置",
-            "client": {
-                "desc": "客户端请求配置，不懂请保持默认，修改请统一为字符串格式",
-                "appid": "1005",
-                "_appid-desc": "酷狗音乐的appid，官方安卓为1005，官方PC为1001",
-                "signatureKey": "OIlwieks28dk2k092lksi2UIkp",
-                "_signatureKey-desc": "客户端signature采用的key值，需要与appid对应",
-                "clientver": "12029",
-                "_clientver-desc": "客户端versioncode，pidversionsecret可能随此值而变化",
-                "pidversionsecret": "57ae12eb6890223e355ccfcb74edf70d",
-                "_pidversionsecret-desc": "获取URL时所用的key值计算验证值",
-            },
-            "tracker": {
-                "desc": "trackerapi请求配置，不懂请保持默认，修改请统一为字符串格式",
-                "host": "https://gateway.kugou.com",
-                "path": "/v5/url",
-                "version": "v5",
-                "x-router": {
-                    "desc": "当host为gateway.kugou.com时需要追加此头，为tracker类地址时则不需要",
-                    "enable": True,
-                    "value": "tracker.kugou.com",
-                },
-                "extra_params": {},
-                "_extra_params-desc": "自定义添加的param，优先级大于默认，填写类型为普通的JSON数据，会自动转换为请求param",
-            },
-            "user": {
-                "desc": "此处内容请统一抓包获取，需要vip账号来获取会员歌曲，如果没有请留为空值，mid必填，可以瞎填一段数字",
-                "token": "",
-                "userid": "0",
-                "mid": "114514",
-            },
-        },
-        "tx": {
-            "desc": "QQ音乐相关配置",
-            "vkeyserver": {
-                "desc": "请求官方api时使用的guid，uin等信息，不需要与cookie中信息一致",
-                "guid": "114514",
-                "uin": "10086",
-            },
-            "user": {
-                "desc": "用户数据，可以通过浏览器获取，需要vip账号来获取会员歌曲，如果没有请留为空值，qqmusic_key可以从Cookie中/客户端的请求体中（comm.authst）获取",
-                "qqmusic_key": "",
-                "uin": "",
-                "_uin-desc": "key对应的QQ号",
-            },
-            "cdnaddr": "http://ws.stream.qqmusic.qq.com/",
-        },
-        "wy": {
-            "desc": "网易云音乐相关配置",
-            "user": {
-                "desc": "账号cookie数据，可以通过浏览器获取，需要vip账号来获取会员歌曲，如果没有请留为空值",
-                "cookie": "",
-            },
-            "reject_unmatcher_quality": True,
-            "_reject_unmatcher_quality-desc": "是否拒绝不匹配的音质（默认拒绝），网易云API在当前环境无法获取该音质时会自动将低音质，开启此功能将拒绝被降级的音质返回",
-        },
-        "mg": {
-            "desc": "咪咕音乐相关配置",
-            "user": {
-                "desc": "研究不深，后两项自行抓包获取，在header里",
-                "aversionid": "",
-                "token": "",
-                "osversion": "10",
-                "useragent": "Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 89.0.4389.82 Safari / 537.36",
-            },
-        },
-    },
-}
+def handleReadConfig():
+    configFilePath = "./config.yaml"
+    config = {}
 
+    if not os.path.exists(configFilePath):
+        default.handleWriteDefaultConfig(configFilePath)
+        return variable.default_config
 
-def handle_default_config():
-    with open("./config.json", "w", encoding="utf-8") as f:
-        f.write(
-            json.dumps(
-                default, indent=2, ensure_ascii=False, escape_forward_slashes=False
-            )
-        )
+    with open(configFilePath, "r", encoding="utf-8") as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
-        if not os.getenv("build"):
-            logger.info("首次启动或配置文件被删除，已创建默认配置文件")
-            logger.info(
-                f"\n建议您到{variable.workdir + os.path.sep}config.json修改配置后重新启动服务器"
-            )
-        return default
+
+    return config
 
 
-class ConfigReadException(Exception):
-    pass
+def handleInitConfig():
+    config = handleReadConfig()
+
+    variable.config = config
 
 
 def load_data():
@@ -385,9 +249,7 @@ def push_to_list(key, obj):
 
 
 def write_config(key, value):
-    config = None
-    with open("config.json", "r", encoding="utf-8") as f:
-        config = json.load(f)
+    config = handleReadConfig()
 
     keys = key.split(".")
     current = config
@@ -398,31 +260,10 @@ def write_config(key, value):
 
     current[keys[-1]] = value
     variable.config = config
-    with open("config.json", "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
+
+    with open("config.yaml", "w", encoding="utf-8") as f:
+        yaml.dump(config, f, default_flow_style=None)
         f.close()
-
-
-def read_default_config(key):
-    try:
-        config = default
-        keys = key.split(".")
-        value = config
-        for k in keys:
-            if isinstance(value, dict):
-                if k not in value and keys.index(k) != len(keys) - 1:
-                    value[k] = {}
-                elif k not in value and keys.index(k) == len(keys) - 1:
-                    value = None
-                value = value[k]
-            else:
-                value = None
-                break
-
-        return value
-    except:
-        logger.warning(f"配置文件{key}不存在")
-        return None
 
 
 def _read_config(key):
@@ -464,7 +305,7 @@ def read_config(key):
 
         return value
     except:
-        default_value = read_default_config(key)
+        default_value = default.handleGetDefaultConfig(key)
         if isinstance(default_value, type(None)):
             logger.warning(f"配置文件{key}不存在")
         else:
@@ -473,7 +314,7 @@ def read_config(key):
                 tkvalue = _read_config(tk)
                 logger.debug(f"configfix: 读取配置文件{tk}的值：{tkvalue}")
                 if (tkvalue is None) or (tkvalue == {}):
-                    write_config(tk, read_default_config(tk))
+                    write_config(tk, default.handleGetDefaultConfig(tk))
                     logger.info(f"配置文件{tk}不存在，已创建")
                     return default_value
 
@@ -494,27 +335,8 @@ def write_data(key, value):
 
 
 def initConfig():
-    try:
-        with open("./config.json", "r", encoding="utf-8") as f:
-            try:
-                variable.config = json.loads(f.read())
-                if not isinstance(variable.config, dict):
-                    logger.warning("配置文件并不是一个有效的字典，使用默认值")
-                    variable.config = default
-                    with open("./config.json", "w", encoding="utf-8") as f:
-                        f.write(
-                            json.dumps(variable.config, indent=2, ensure_ascii=False)
-                        )
-                        f.close()
-            except:
-                if os.path.getsize("./config.json") != 0:
-                    logger.error("配置文件加载失败，请检查是否遵循JSON语法规范")
-                    sys.exit(1)
-                else:
-                    variable.config = handle_default_config()
-    except FileNotFoundError:
-        variable.config = handle_default_config()
-    # print(variable.config)
+    handleInitConfig()
+
     variable.log_length_limit = read_config("common.log_length_limit")
     variable.debug_mode = read_config("common.debug_mode")
     logger.debug("配置文件加载成功")
@@ -609,4 +431,5 @@ def check_ip_banned(ip_addr):
         return False
 
 
+default.handleInitDefaultConfig()
 initConfig()

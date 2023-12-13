@@ -8,10 +8,10 @@
 # This file is part of the "lx-music-api-server" project.
 
 from common import Httpx
-from common import config
 from common.exceptions import FailedException
 from .encrypt import eapiEncrypt
 import ujson as json
+import config
 
 tools = {
     "qualityMap": {

@@ -9,8 +9,8 @@
 
 from common.exceptions import FailedException
 from common import utils
-from common import config
 from common import Httpx
+import config
 import ujson as json
 import time
 

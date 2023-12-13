@@ -11,14 +11,15 @@
 from common.exceptions import FailedException
 from common.utils import require
 from common import log
-from common import config
-from . import kw
-from . import mg
-from . import kg
-from . import tx
-from . import wy
+import config
 import traceback
 import time
+
+from . import kg
+from . import kw
+from . import tx
+from . import wy
+from . import mg
 
 logger = log.log('api_handler')
 

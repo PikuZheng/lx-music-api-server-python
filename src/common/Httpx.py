@@ -16,8 +16,8 @@ import ujson as json
 import re
 import time
 import pickle
+import config
 from . import log
-from . import config
 from . import utils
 from . import variable
 

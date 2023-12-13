@@ -1,5 +1,4 @@
 from aiohttp import web
-from common import config
 from common import lxsecurity
 from common import utils
 from common import log
@@ -7,6 +6,7 @@ from common import Httpx
 from modules import handleApiRequest
 import traceback
 import time
+import config
 
 logger = log.log("main")
 aiologger = log.log("aiohttp_web")

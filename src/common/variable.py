@@ -49,6 +49,7 @@ log_length_limit = (
 )
 running = True
 config = {}
+default_config = None
 workdir = os.getcwd()
 banList_suggest = 0
 iscn = True

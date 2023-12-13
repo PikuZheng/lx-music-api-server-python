@@ -10,9 +10,9 @@
 from common.exceptions import FailedException
 from common import Httpx
 from common import utils
-from common import config
 from .QMWSign import sign
 import ujson as json
+import config
 
 createObject = utils.CreateObject
 

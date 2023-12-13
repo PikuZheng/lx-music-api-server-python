@@ -1,0 +1,132 @@
+common:
+  # 开发模式
+  debug_mode: true
+  # 服务器启动时所使用的HOST地址
+  host: '0.0.0.0'
+  # 服务器启动时所使用的端口
+  port: '9763'
+  # 日志长度限制
+  log_length_limit: 500
+  # 代理
+  proxy:
+    # 是否启用
+    enable: false
+    # HTTP代理地址
+    http_addr: 'http://127.0.0.1:7890'
+    # HTTPS代理地址
+    https_addr: 'https://127.0.0.1:7890'
+
+module:
+  # 酷狗音乐相关配置
+  kg:
+    # 客户端请求配置，不懂请保持默认，修改请统一为字符串格式
+    client:
+      # 酷狗音乐的appid，官方安卓为1005，官方PC为1001
+      appid: '1005'
+      # 客户端versioncode，pidversionsecret可能随此值而变化
+      clientver: '12029'
+      # 获取URL时所用的key值计算验证值
+      pidversionsecret: '57ae12eb6890223e355ccfcb74edf70d'
+      # 客户端signature采用的key值，需要与appid对应
+      signatureKey: 'OIlwieks28dk2k092lksi2UIkp'
+    # trackerapi请求配置，不懂请保持默认，修改请统一为字符串格式
+    tracker:
+      # 自定义添加的param，优先级大于默认，填写类型为普通的JSON数据，会自动转换为请求param
+      extra_params: {}
+      # API地址
+      host: 'https://gateway.kugou.com'
+      # API路径
+      path: '/v5/url'
+      # API版本
+      version: 'v5'
+      # 当HOST为 [gateway.kugou.com] 时需要追加此头，为tracker类地址时则不需要
+      x-router:
+        enable: true
+        value: 'tracker.kugou.com'
+    # 此处内容请统一抓包获取，需要vip账号来获取会员歌曲，如果没有请留为空值，mid必填，可以瞎填一段数字,
+    user:
+      # 必填，可以瞎填一段数字
+      mid: '295969528057346996858554316433305774095'
+      # 账号TOKEN (默认为官方安卓版本TOKEN，其他版本未经测试)
+      token: '243RlaE4bPhHP3DFUDK1A5xmQ10OdC12wF4fQ08MVnX3LHY804ZPkzF3yhv5k'
+      # 用户ID，需要和TOKEN对应
+      userid: '1641138476'
+
+  # 咪咕音乐相关配置
+  mg:
+    # 研究不深，自行抓包获取，在header里
+    user:
+      aversionid: ''
+      osversion: '10'
+      token: ''
+      useragent: 'Mozilla / 5.0 (Windows NT 10.0; Win64; x64) AppleWebKit / 537.36 (KHTML, like Gecko) Chrome / 89.0.4389.82 Safari / 537.36'
+
+  # QQ音乐相关配置
+  tx:
+    # CDN地址
+    cdnaddr: 'http://ws.stream.qqmusic.qq.com/'
+    # 用户数据，可以通过浏览器获取，需要vip账号来获取会员歌曲，如果没有请留为空值，
+    user:
+      # 可以从Cookie中/客户端的请求体(comm.authst)中获取
+      qqmusic_key: ''
+      # QQ号，需要和TOKEN对应
+      uin: '2964359326'
+    # 请求API时使用的信息 (不需要与user中的配置对应)
+    vkeyserver:
+      guid: '0'
+      uin: '0'
+
+  # 网易云音乐相关配置
+  wy:
+    # 账号数据
+    user:
+      # 用户Cookie，可以通过网页端的请求Header中获取
+      cookie: ''
+
+security:
+  # 是否检查 LXM 请求头 (正常的LX Music请求时都会携带这个请求头)
+  check_lxm: false
+  # LXM 请求头不存在或不匹配时是否将IP加入黑名单
+  lxm_ban: true
+
+  # HOST允许列表，启用后只允许列表内的HOST访问服务器 (不需要加端口号)
+  allowed_host:
+    # 是否开启
+    enable: false
+    # 允许列表
+    list: ['localhost', '0.0.0.0', '127.0.0.1']
+    # 当用户访问的 HOST 并不在允许列表中时是否将请求IP加入黑名单
+    blacklist:
+      # 是否开启
+      enable: false
+      # 黑名单时间 (单位:秒)
+      length: 0
+
+  # 是否启用黑名单 (全局设置，关闭后已存储的值并不受影响，但不会再检查)
+  banlist:
+    enable: true
+    # 是否启用黑名单 IP 过期 (关闭后其他地方的配置会失效)
+    expire:
+      # 是否开启
+      enable: true
+      # 值
+      length: 604800
+
+  # 是否开启请求KEY (开启后只有请求头中包含KEY，且值一样时可以访问API)
+  key:
+    # 是否开启
+    enable: false
+    # 错误时封禁该IP
+    ban: true
+    # 值
+    value: '114514'
+
+  # 请求速率限制 (单位:秒，不限制请填为0)
+  rate_limit:
+    # 全局限制
+    global: 0
+    # 单个 IP 限制
+    ip: 0
+
+  # 强制白名单HOST [即不受其他安全设置影响的HOST] (不需要加端口号)
+  whitelist_host: ['localhost', '0.0.0.0', '127.0.0.1']
